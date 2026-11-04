@@ -4,9 +4,12 @@ PULSE is a Proactive Customer Recovery & Assurance Platform built for the Talkde
 
 ---
 
-## Current Milestone: B1 – Backend Foundation
+## Current Milestone: B2 – Complete API Stubs
 
-This milestone delivers the initial backend foundation, SQLite database schemas, lifecycle enums, configuration management, health check endpoint with live database verification, and comprehensive test suite.
+Milestone B2 provides complete, typed, deterministic API stubs for all 18 agreed system endpoints. This allows:
+- **Person A (Integration Lead):** Connect Talkdesk AI Agent tools to live backend endpoints.
+- **Person C (Frontend Lead):** Connect the React dashboard and incident views.
+- **Person B (Backend Lead):** Incrementally implement real business logic in subsequent milestones.
 
 ### Stack
 - **Language:** Python 3.13
@@ -29,34 +32,58 @@ PULSE/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py
-│   │   ├── config.py         # Environment-based configuration
-│   │   ├── database.py       # SQLModel engine, session, & health probe
-│   │   ├── main.py           # FastAPI app & GET /health endpoint
-│   │   ├── models/           # SQLModel table definitions
+│   │   ├── config.py         # Environment configuration
+│   │   ├── database.py       # SQLModel engine & health probe
+│   │   ├── main.py           # FastAPI app & router registration
+│   │   ├── models/           # SQLModel database tables
 │   │   │   ├── __init__.py
-│   │   │   ├── action.py     # Execution action tracking
-│   │   │   ├── case.py       # Customer recovery case
-│   │   │   ├── commitment.py # Lifecycle commitment record
-│   │   │   ├── event.py      # Ingested operational event
-│   │   │   ├── incident.py   # Systemic operational incident
-│   │   │   └── policy_decision.py # Policy evaluation record
-│   │   ├── schemas/          # Pydantic schemas & shared enums
+│   │   │   ├── action.py
+│   │   │   ├── case.py
+│   │   │   ├── commitment.py
+│   │   │   ├── event.py
+│   │   │   ├── incident.py
+│   │   │   └── policy_decision.py
+│   │   ├── routers/          # Person B-owned API routers (B2 Stubs)
 │   │   │   ├── __init__.py
-│   │   │   ├── common.py     # CommitmentStatus & PolicyDecisionEnum
-│   │   │   └── health.py     # HealthResponse schema
-│   │   └── services/         # Business services (placeholder for B2+)
-│   │       └── __init__.py
+│   │   │   ├── admin.py       # POST /admin/*
+│   │   │   ├── cases.py       # GET /cases/{case_ref}/context
+│   │   │   ├── commitments.py # GET/POST /commitments/*
+│   │   │   ├── dashboard.py   # GET /dashboard
+│   │   │   ├── events.py      # POST /events/ingest
+│   │   │   ├── incidents.py   # GET /incidents/*
+│   │   │   ├── mock.py        # POST /mock/refund, GET /mock/settlement/*
+│   │   │   ├── payments.py    # GET /payments/{payment_ref}/diagnosis
+│   │   │   ├── resolutions.py # POST /resolutions/*
+│   │   │   └── verification.py# POST /verification/run
+│   │   ├── schemas/          # Typed Pydantic request/response models
+│   │   │   ├── __init__.py
+│   │   │   ├── admin.py
+│   │   │   ├── cases.py
+│   │   │   ├── commitments.py
+│   │   │   ├── common.py
+│   │   │   ├── dashboard.py
+│   │   │   ├── events.py
+│   │   │   ├── health.py
+│   │   │   ├── incidents.py
+│   │   │   ├── mock.py
+│   │   │   ├── payments.py
+│   │   │   ├── resolutions.py
+│   │   │   └── verification.py
+│   │   └── services/         # Shared services & demo state
+│   │       ├── __init__.py
+│   │       └── demo_state.py # Demo controls & mode toggles
 │   └── tests/
-│       └── test_health.py    # Health check & database verification tests
+│       ├── test_health.py    # B1 health probe tests
+│       └── test_api_stubs.py # B2 complete API stub tests
 └── contracts/
-    └── API_CONTRACT.md       # Team API contract & agreed endpoint specs
+    └── API_CONTRACT.md       # Full API contract with wire/model mappings
 ```
 
 ---
 
 ## Team Folder Ownership
 
-- **Backend Lead (Person B):** `backend/app/` (core), `backend/tests/`, `contracts/`, `main.py`, router registration.
+- **Backend Lead (Person B):** `backend/app/` (core, models, routers, schemas, services), `backend/tests/`, `contracts/`, `main.py`.
 - **Integration Lead (Person A):** `backend/app/talkdesk_adapter/`, `docs/`.
 - **Frontend & Incident Correlation Lead (Person C):** `backend/app/incidents/`, `frontend/`, `scripts/`.
 
@@ -67,13 +94,8 @@ PULSE/
 ### 1. Create Virtual Environment and Install Dependencies
 
 ```powershell
-# Create virtual environment
 python -m venv .venv
-
-# Activate virtual environment
 .\.venv\Scripts\Activate.ps1
-
-# Upgrade pip and install requirements
 pip install -r requirements.txt
 ```
 
@@ -87,7 +109,7 @@ Copy-Item .env.example .env
 
 ```powershell
 $env:PYTHONPATH = "."
-pytest -v backend/tests/
+.\.venv\Scripts\python.exe -m pytest -v backend/tests/
 ```
 
 ### 4. Start the Backend Server
@@ -96,28 +118,39 @@ pytest -v backend/tests/
 .\run.ps1
 ```
 
-Or directly via Uvicorn:
+Or via Uvicorn:
 
 ```powershell
 $env:PYTHONPATH = "."
-uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+- Interactive OpenAPI Swagger docs: `http://127.0.0.1:8000/docs`
+- ReDoc documentation: `http://127.0.0.1:8000/redoc`
 
 ---
 
-## Endpoints
+## Implemented Endpoints Summary (B2)
 
-### Milestone B1
-- **`GET /health`**: Live health check with verified database query.
-  ```json
-  {
-    "status": "ok",
-    "service": "PULSE Backend",
-    "database": "connected"
-  }
-  ```
-- **`GET /docs`**: Interactive Swagger / OpenAPI documentation.
-- **`GET /redoc`**: ReDoc alternative API documentation.
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | System health & live DB connectivity probe |
+| `GET` | `/cases/{case_ref}/context` | Case context, customer info & open commitments |
+| `GET` | `/payments/{payment_ref}/diagnosis` | Discrepancy diagnosis between payment & order |
+| `GET` | `/incidents/active` | Active operational incident (`INC-0042`) |
+| `GET` | `/incidents` | Incident history & operational failures |
+| `POST` | `/resolutions/propose` | Policy evaluation & resolution proposal |
+| `POST` | `/resolutions/execute` | Remediation execution dispatch |
+| `POST` | `/verification/run` | Independent outcome verification |
+| `GET` | `/commitments` | List all tracked commitments |
+| `GET` | `/commitments/{id}` | Retrieve commitment record by ID |
+| `POST` | `/commitments/{id}/approve` | Supervisor approval/rejection |
+| `POST` | `/events/ingest` | Telemetry event ingestion (maps `type` &rarr; `event_type`) |
+| `GET` | `/dashboard` | Aggregated operational metrics for frontend |
+| `POST` | `/mock/refund` | Mock payment gateway refund dispatch |
+| `GET` | `/mock/settlement/{refund_ref}` | Mock bank settlement status probe |
+| `POST` | `/admin/settlement-mode` | Set settlement mode (`NOT_FOUND` / `FOUND`) |
+| `POST` | `/admin/seed` | Seed demo data |
+| `POST` | `/admin/reset` | Reset demo state |
 
-Full endpoint contract for upcoming milestones (B2+) is documented in [contracts/API_CONTRACT.md](contracts/API_CONTRACT.md).
-
+Full wire payloads and contract specifications are detailed in [contracts/API_CONTRACT.md](contracts/API_CONTRACT.md).

@@ -5,6 +5,18 @@ from fastapi.responses import JSONResponse
 
 from backend.app.config import settings
 from backend.app.database import check_database_connection, init_db
+from backend.app.routers import (
+    admin_router,
+    cases_router,
+    commitments_router,
+    dashboard_router,
+    events_router,
+    incidents_router,
+    mock_router,
+    payments_router,
+    resolutions_router,
+    verification_router,
+)
 from backend.app.schemas.health import HealthResponse
 
 
@@ -61,3 +73,15 @@ async def health_check():
         ).model_dump(),
     )
 
+
+# Register all B2 API stub routers
+app.include_router(cases_router)
+app.include_router(payments_router)
+app.include_router(incidents_router)
+app.include_router(resolutions_router)
+app.include_router(verification_router)
+app.include_router(commitments_router)
+app.include_router(events_router)
+app.include_router(dashboard_router)
+app.include_router(mock_router)
+app.include_router(admin_router)
